@@ -1,4 +1,4 @@
-package io.bespin.java.mapreduce.wordcount;
+package ca.uwaterloo.cs.bigdata2016w.lintool.assignment0;
 
 import java.io.IOException;
 import java.util.HashMap;
