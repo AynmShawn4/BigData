@@ -1,4 +1,4 @@
-package ca.uwaterloo.cs.bigdata2016w.lintool.assignment0;
+package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment0;
 
 import java.io.IOException;
 import java.util.HashMap;
