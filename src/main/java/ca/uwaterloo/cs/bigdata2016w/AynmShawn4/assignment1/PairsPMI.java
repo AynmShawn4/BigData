@@ -41,24 +41,23 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-
-      List<String> tokens = new ArrayList<String>();
       StringTokenizer itr = new StringTokenizer(line);
+
+      int cnt = 0;
+      Set set = Sets.newHashSet();
       while (itr.hasMoreTokens()) {
+        cnt++;
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
         if (w.length() == 0) continue;
-        tokens.add(w);
+        set.add(w);
+        if (cnt >= 100) break;
       }
 
-      if (tokens.size() < 2) return;
-      for (int i = 1; i < tokens.size(); i++) {
-        BIGRAM.set(tokens.get(i - 1), tokens.get(i));
-        context.write(BIGRAM, ONE);
+      String[] words = new String[set.size()];
+      words = set.toArray(words);
 
-        BIGRAM.set(tokens.get(i - 1), "*");
-        context.write(BIGRAM, ONE);
-      }
-    }
+      // Your code goes here...
+   }
   }
 
   protected static class MyCombiner extends
