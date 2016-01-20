@@ -26,10 +26,21 @@
 (palsies, dirt-rotten)	5.087987<br>
 
 
-There are a huge number of pairs that have 5.087987 as PMI. However, most of them are realy rare and weird combination. Since both x and y are quite rare, the p(x) * p(y) wil be really small compared to p(x,y) which makes p(x,y)/ (p(x) * p(y)) relatively large. 
+There are a huge number of pairs that have 5.087987 as PMI. However, most of them are realy rare and weird combinations. Since both x and y are quite rare, the p(x) * p(y) wil be really small compared to p(x,y) which makes p(x,y)/ (p(x) * p(y)) relatively large. 
 
 
 </li>
 
-<li>Blue</li>
+<li>(tears, niobe)	2.6346688 <br>
+(tears, distasted)	2.6346688<br>
+(tears, cleansing)	2.6346688<br>
+There are fair amount of pairs that have 2.6346688 as it PMI which is highest.<br>
+<br>
+(death, enernies) 2.1616447 <br>
+
+(death, hard-favoured)	2.1616447<br>
+(death, craved)	2.1616447<br>
+There are fair amount of pairs that have 2.1616447 as it PMI which is highest.<br>
+
+</li>
 </ol>
