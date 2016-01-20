@@ -1,9 +1,9 @@
 <ol>
 <li>For both pairs and stripes implementations, side data were required. <ul>
-    <li><b>Count.java:</b> This program was first run to calculate the total line number and occurance number of each word.
-    Then, the output file will be stored and used as side data which will be loaded into setup function within reducer method for both PairsPMI and StripesPMI implementation. This program only has 1 MapReduce job. The input for this program is the shakespare text file; The intermediate key-value pairs are words and their occurance number one; The final output records are total number of lines and occurance numbers of words. </li>
-    <li>Gum.</li>
-    <li>Booze.</li>
+    <li><b>Count.java:</b> This program was first run to calculate the total line number and occurrence number of each word.
+    Then, the output file will be stored and used as side data which will be loaded into setup function within reducer method for both PairsPMI and StripesPMI implementation. This program only has 1 MapReduce job. The input for this program is the shakespare text file; The intermediate key-value pairs are words and their occurrence number one; The final output records are total number of lines and occurrence numbers of words. </li>
+    <li><b>PairsPMI.java:</b> Program with pairs implementation. It contains only 1 Mapreduce job.  The input for this program is the shakespare text file; The intermediate key-value pairs are pairs of words (x,y) and their occurrence number one; The final output records are pairs of words (x,y) and their PMI. At the reduce stage, side data from the output of Count.java is required.</li>
+    <li>StripesPMI.java:</b> Program with stripes implementation. It contains only 1 Mapreduce job.  The input for this program is the shakespare text file; The intermediate key-value pairs are words and their associativeArray of occurrence number which is implemented as hashmap in program; The final output records are  words and their associativeArray of PMI. At the reduce stage, side data from the output of Count.java is required.</li>
     </ul>
 
 </li>
