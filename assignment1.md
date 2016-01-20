@@ -1,6 +1,6 @@
 <ol>
 <li>For both pairs and stripes implementations, 2 MapReduce jobs are used. <ul>
-    <li>Candy.</li>
+    <li><em>Count.java</em></li>
     <li>Gum.</li>
     <li>Booze.</li>
     </ul>
