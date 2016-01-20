@@ -1,5 +1,11 @@
 <ol>
-<li>For both pairs and stripes implementations, 2 MapReduce jobs are used. </li>
+<li>For both pairs and stripes implementations, 2 MapReduce jobs are used. <ul>
+    <li>Candy.</li>
+    <li>Gum.</li>
+    <li>Booze.</li>
+    </ul>
+
+</li>
 
 <li>Green</li>
 
