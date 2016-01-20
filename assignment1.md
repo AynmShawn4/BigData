@@ -1,8 +1,13 @@
 <ol>
 <li>Red</li>
+
 <li>Green</li>
+
 <li>Blue</li>
+
 <li>Red</li>
+
 <li>Green</li>
+
 <li>Blue</li>
 </ol>
