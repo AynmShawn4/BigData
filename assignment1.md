@@ -20,6 +20,15 @@
 <li>984045 distinct pairs.</li>
 
 <li>(loquitur, vir)	5.087987<br>
+(lucifer's, privy-kitchen)	5.087987 <br>
+(maidenliest, twinkled)	5.087987 <br>
+(a-down-a, a-down)	5.087987 <br>
+(palsies, dirt-rotten)	5.087987<br>
+
+
+There are a huge number of pairs that have 5.087987 as PMI. However, most of them are realy rare and weird combination. Since both x and y are quite rare, the p(x) * p(y) wil be really small compared to p(x,y) which makes p(x,y)/ (p(x) * p(y)) relatively large. 
+
+
 </li>
 
 <li>Blue</li>
