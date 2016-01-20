@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.Math;
+import java.lang.String;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.conf.Configuration;
@@ -36,18 +37,23 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.pair.PairOfStrings;
+import tl.lin.data.map.HMapStIW;
+import tl.lin.data.map.HMapStFW;
 
-public class PairsPMI  extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(PairsPMI.class);
 
-  protected static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
-    private static final FloatWritable ONE = new FloatWritable(1);
-    private static final PairOfStrings BIGRAM = new PairOfStrings();
+public class StripesPMI  extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(StripesPMI.class);
+
+  protected static class MyMapper extends Mapper<LongWritable, Text, Text, HMapStFW> {
+    private static final Text TEXT = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
+
+      HashMap<String, HMapStFW> stripes = new HashMap<String, HMapStFW>();
+
       StringTokenizer itr = new StringTokenizer(line);
 
       int cnt = 0;
@@ -63,49 +69,57 @@ public class PairsPMI  extends Configured implements Tool {
       String[] words = new String[set.size()];
       words = set.toArray(words);
 
+
       for (int i = 0; i < set.size(); i++){
 
-        for (int j =  0; j < set.size(); j++){
+        for (int j = 0; j < set.size(); j++){
+
           if (i == j){
             continue;
-          } else {
-            BIGRAM.set(words[i], words[j]);
-            context.write(BIGRAM, ONE);
           }
-
+          if (stripes.containsKey(words[i])) {
+            HMapStFW stripe = stripes.get(words[i]);
+            if (stripe.containsKey(words[j])) {
+              stripe.put(words[j], stripe.get(words[j])+1.0f);
+            } else {
+              stripe.put(words[j], 1.0f);
+            }
+          } else {
+            HMapStFW stripe = new HMapStFW();
+            stripe.put(words[j], 1.0f);
+            stripes.put(words[i], stripe);
+          }
+ 
         }
+      }
 
+      for (String t : stripes.keySet()) {
+        TEXT.set(t);
+        context.write(TEXT, stripes.get(t));
       }
 
     }
-      // Your code goes here... 
-      
   }
 
-  protected static class MyCombiner extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
-    private static final FloatWritable SUM = new FloatWritable();
-
+  private static class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
     @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+    public void reduce(Text key, Iterable<HMapStFW> values, Context context)
         throws IOException, InterruptedException {
-      int sum = 0;
-      Iterator<FloatWritable> iter = values.iterator();
+      Iterator<HMapStFW> iter = values.iterator();
+      HMapStFW map = new HMapStFW();
+
       while (iter.hasNext()) {
-        sum += iter.next().get();
+        map.plus(iter.next());
       }
-      SUM.set(sum);
-      context.write(key, SUM);
+
+      context.write(key, map);
     }
   }
 
+  private static class MyReducer extends Reducer<Text, HMapStFW, Text, HMapStFW> {
 
-  protected static class MyReducer extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
-    private static final FloatWritable VALUE = new FloatWritable();
-
-    private float marginal = 0.0f;
     private static final HashMap<String, Float> hMap = new HashMap<String, Float>();
+
 
     @Override
     public void setup (Context context) throws IOException{
@@ -141,41 +155,46 @@ public class PairsPMI  extends Configured implements Tool {
         }
 
     @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+    public void reduce(Text key, Iterable<HMapStFW> values, Context context)
         throws IOException, InterruptedException {
+      Iterator<HMapStFW> iter = values.iterator();
+      HMapStFW map = new HMapStFW();
 
-
-      float sum = 0.0f;
-      Iterator<FloatWritable> iter = values.iterator();
       while (iter.hasNext()) {
-        sum += iter.next().get();
+        map.plus(iter.next());
       }
-      float total = hMap.get("*");
-  
-      float coprob = sum/total;
 
-      float leftprob =   hMap.get(key.getRightElement()) /total;
+      for (String term : map.keySet()) {
+        //map.put(term, map.get(term) / sum);
 
-      float rightprob = hMap.get(key.getLeftElement() ) / total;
+        float total = hMap.get("*");
 
-      float pmi = (float)Math.log10(coprob / (leftprob * rightprob));
 
-      VALUE.set(pmi);
-      context.write(key,VALUE);
+        float coprob = map.get(term)/total;
+
+        float leftprob =   hMap.get(key.toString()) /total;
+
+
+        float rightprob = hMap.get(term ) / total;
+
+        float pmi = (float)Math.log10(coprob / (leftprob * rightprob));
+
+        map.put(term, pmi);
+
+
+
+      }
+
+      context.write(key,map);
+
+      
     }
   }
-  /*
-  protected static class MyPartitioner extends Partitioner<PairOfStrings, FloatWritable> {
-    @Override
-    public int getPartition(PairOfStrings key, FloatWritable value, int numReduceTasks) {
-      return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
-    }
-  }*/
 
   /**
    * Creates an instance of this tool.
    */
-  private PairsPMI() {}
+  private StripesPMI() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -206,35 +225,34 @@ public class PairsPMI  extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
+    LOG.info("Tool name: " + StripesPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(PairsPMI.class.getSimpleName());
-    job.setJarByClass(PairsPMI.class);
+    job.setJobName(StripesPMI.class.getSimpleName());
+    job.setJarByClass(StripesPMI.class);
 
     job.setNumReduceTasks(args.numReducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
     FileOutputFormat.setOutputPath(job, new Path(args.output));
 
-    job.setMapOutputKeyClass(PairOfStrings.class);
-    job.setMapOutputValueClass(FloatWritable.class);
-    job.setOutputKeyClass(PairOfStrings.class);
-    job.setOutputValueClass(FloatWritable.class);
- /*   if (args.textOutput) {
-      job.setOutputFormatClass(TextOutputFormat.class);
-    } else {
-      job.setOutputFormatClass(SequenceFileOutputFormat.class);
-    }*/
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(HMapStFW.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(HMapStFW.class);
+ //   if (args.textOutput) {
+ //     job.setOutputFormatClass(TextOutputFormat.class);
+ //   } else {
+ //     job.setOutputFormatClass(SequenceFileOutputFormat.class);
+  //  }
 
     job.setMapperClass(MyMapper.class);
     job.setCombinerClass(MyCombiner.class);
     job.setReducerClass(MyReducer.class);
-  //  job.setPartitionerClass(MyPartitioner.class);
 
     // Delete the output directory if it exists already.
     Path outputDir = new Path(args.output);
@@ -251,6 +269,6 @@ public class PairsPMI  extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new PairsPMI(), args);
+    ToolRunner.run(new StripesPMI(), args);
   }
 }
