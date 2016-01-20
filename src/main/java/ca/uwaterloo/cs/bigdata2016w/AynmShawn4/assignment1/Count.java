@@ -31,8 +31,8 @@ import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.pair.PairOfStrings;
 
-public class PairsPMI  extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(PairsPMI.class);
+public class Count  extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(Count.class);
 
   protected static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
     private static final FloatWritable ONE = new FloatWritable(1);
@@ -61,9 +61,7 @@ public class PairsPMI  extends Configured implements Tool {
     
       for (int i = 0; i < set.size(); i++){
         BIGRAM.set(words[i],"*");
-        context.write(BIGRAM.ONE);
-
-        }
+        context.write(BIGRAM,ONE);
 
       }
 
@@ -124,7 +122,7 @@ public class PairsPMI  extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  private PairsPMI() {}
+  private Count() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -155,15 +153,15 @@ public class PairsPMI  extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
+    LOG.info("Tool name: " + Count.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(PairsPMI.class.getSimpleName());
-    job.setJarByClass(PairsPMI.class);
+    job.setJobName(Count.class.getSimpleName());
+    job.setJarByClass(Count.class);
 
     job.setNumReduceTasks(args.numReducers);
 
@@ -200,6 +198,6 @@ public class PairsPMI  extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new PairsPMI(), args);
+    ToolRunner.run(new Count(), args);
   }
 }

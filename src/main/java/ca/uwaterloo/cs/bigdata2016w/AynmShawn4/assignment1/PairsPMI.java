@@ -6,9 +6,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.HashSet;
+import java.util.HashMap; 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.lang.Math;
 
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -93,28 +99,69 @@ public class PairsPMI  extends Configured implements Tool {
     }
   }
 
+
   protected static class MyReducer extends
       Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
     private static final FloatWritable VALUE = new FloatWritable();
+
     private float marginal = 0.0f;
+    private static final HashMap<String, Float> hMap = new HashMap<String, Float>();
+
+    @Override
+    public void setup (Context context) throws IOException{
+          try{
+                  FileSystem fs = FileSystem.get(new Configuration());
+                  FileStatus[] status = fs.listStatus(new Path("./lineNumber/part-r-00000"));
+                  
+                  for (int i = 0; i < status.length; i++){
+                          BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(status[i].getPath())));
+                          String line;
+                          line=br.readLine();
+
+                          while (line != null){
+                            line = line.replaceAll("\\(", "").replaceAll("\\)","").replaceAll("(\\,)(\\s+)(\\*)"," ");
+                            String[] countNum = new String[2];
+                            countNum = line.split("\\s+");
+                        
+                            String left = countNum[0];
+
+                            String right = countNum[1];
+                            float f = Float.parseFloat(right);
+
+
+                            hMap.put(left, f);
+
+                            line = br.readLine();
+
+                          }
+                  }
+          }catch(Exception e){
+                  System.out.println("***********************File not found");
+          }
+        }
 
     @Override
     public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
         throws IOException, InterruptedException {
+
+
       float sum = 0.0f;
       Iterator<FloatWritable> iter = values.iterator();
       while (iter.hasNext()) {
         sum += iter.next().get();
       }
+      float total = hMap.get("*");
+  
+      float coprob = sum/total;
 
-      if (key.getRightElement().equals("*")) {
-        VALUE.set(sum);
-        context.write(key, VALUE);
-        marginal = sum;
-      } else {
-        VALUE.set(sum / marginal);
-        context.write(key, VALUE);
-      }
+      float leftprob =   hMap.get(key.getRightElement()) /total;
+
+      float rightprob = hMap.get(key.getLeftElement() ) / total;
+
+      float pmi = (float)Math.log10(coprob / (leftprob * rightprob));
+
+      VALUE.set(pmi);
+      context.write(key,VALUE);
     }
   }
   /*
@@ -186,7 +233,7 @@ public class PairsPMI  extends Configured implements Tool {
 
     job.setMapperClass(MyMapper.class);
     job.setCombinerClass(MyCombiner.class);
-  //  job.setReducerClass(MyReducer.class);
+    job.setReducerClass(MyReducer.class);
   //  job.setPartitionerClass(MyPartitioner.class);
 
     // Delete the output directory if it exists already.
