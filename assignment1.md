@@ -1,5 +1,5 @@
 <ol>
-<li>Red</li>
+<li>For both pairs and stripes implementations, 2 MapReduce jobs are used. </li>
 
 <li>Green</li>
 
