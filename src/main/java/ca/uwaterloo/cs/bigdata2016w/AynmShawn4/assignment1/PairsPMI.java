@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.HashSet;
 
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -30,8 +31,8 @@ import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.pair.PairOfStrings;
 
-public class ComputeBigramRelativeFrequencyPairs  extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(ComputeBigramRelativeFrequencyPairs.class);
+public class PairsPMI  extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(PairsPMI.class);
 
   protected static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
     private static final FloatWritable ONE = new FloatWritable(1);
@@ -44,7 +45,7 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
       StringTokenizer itr = new StringTokenizer(line);
 
       int cnt = 0;
-      Set set = Sets.newHashSet();
+      HashSet<String> set = new HashSet<String>();
       while (itr.hasMoreTokens()) {
         cnt++;
         String w = itr.nextToken().toLowerCase().replaceAll("(^[^a-z]+|[^a-z]+$)", "");
@@ -56,8 +57,23 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
       String[] words = new String[set.size()];
       words = set.toArray(words);
 
-      // Your code goes here...
-   }
+      for (int i = 0; i < set.size(); i++){
+
+        for (int j =  0; j < set.size(); j++){
+          if (i == j){
+            continue;
+          } else {
+            BIGRAM.set(words[i], words[j]);
+            context.write(BIGRAM, ONE);
+          }
+
+        }
+
+      }
+
+    }
+      // Your code goes here... 
+      
   }
 
   protected static class MyCombiner extends
@@ -101,18 +117,18 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
       }
     }
   }
-
+  /*
   protected static class MyPartitioner extends Partitioner<PairOfStrings, FloatWritable> {
     @Override
     public int getPartition(PairOfStrings key, FloatWritable value, int numReduceTasks) {
       return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
     }
-  }
+  }*/
 
   /**
    * Creates an instance of this tool.
    */
-  private ComputeBigramRelativeFrequencyPairs() {}
+  private PairsPMI() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -143,15 +159,15 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
       return -1;
     }
 
-    LOG.info("Tool name: " + ComputeBigramRelativeFrequencyPairs.class.getSimpleName());
+    LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(ComputeBigramRelativeFrequencyPairs.class.getSimpleName());
-    job.setJarByClass(ComputeBigramRelativeFrequencyPairs.class);
+    job.setJobName(PairsPMI.class.getSimpleName());
+    job.setJarByClass(PairsPMI.class);
 
     job.setNumReduceTasks(args.numReducers);
 
@@ -162,16 +178,16 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
     job.setMapOutputValueClass(FloatWritable.class);
     job.setOutputKeyClass(PairOfStrings.class);
     job.setOutputValueClass(FloatWritable.class);
-    if (args.textOutput) {
+ /*   if (args.textOutput) {
       job.setOutputFormatClass(TextOutputFormat.class);
     } else {
       job.setOutputFormatClass(SequenceFileOutputFormat.class);
-    }
+    }*/
 
     job.setMapperClass(MyMapper.class);
     job.setCombinerClass(MyCombiner.class);
-    job.setReducerClass(MyReducer.class);
-    job.setPartitionerClass(MyPartitioner.class);
+  //  job.setReducerClass(MyReducer.class);
+  //  job.setPartitionerClass(MyPartitioner.class);
 
     // Delete the output directory if it exists already.
     Path outputDir = new Path(args.output);
@@ -188,6 +204,6 @@ public class ComputeBigramRelativeFrequencyPairs  extends Configured implements 
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new ComputeBigramRelativeFrequencyPairs(), args);
+    ToolRunner.run(new PairsPMI(), args);
   }
 }
