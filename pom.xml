@@ -1,34 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.bespin</groupId>
-  <artifactId>bespin</artifactId>
+  <groupId>ca.uwaterloo.cs.bigdata2016w.evisoup</groupId>
+  <artifactId>bigdata2016w</artifactId>
   <packaging>jar</packaging>
-  <name>Bespin</name>
+  <name>bigdata2016w</name>
   <version>0.1.0-SNAPSHOT</version>
-  <description>Code for the big data course at the University of Waterloo.</description>
-  <url>http://bespin.io/</url>
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <scm>
-    <connection>scm:git:git@github.com:lintool/bespin.git</connection>
-    <developerConnection>scm:git:git@github.com:lintool/bespin.git</developerConnection>
-    <url>git@github.com:lintool/bespin.git</url>
-  </scm>
-  <developers>
-    <developer>
-      <id>lintool</id>
-      <name>Jimmy Lin</name>
-      <email>jimmylin@uwaterloo.ca</email>
-    </developer>
-  </developers>
 
   <repositories>
     <repository>
@@ -152,16 +130,17 @@
       <artifactId>jung-graph-impl</artifactId>
       <version>2.0.1</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <version>${scala.version}</version>
-    </dependency>
+    
     <dependency>
       <groupId>org.rogach</groupId>
       <artifactId>scallop_2.10</artifactId>
       <version>0.9.5</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
