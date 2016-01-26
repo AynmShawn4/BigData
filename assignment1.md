@@ -44,3 +44,45 @@ There are fair amount of pairs that have 2.1616447 as it PMI which is highest.<b
 
 </li>
 </ol>
+
+
+
+Q4p			1.5
+
+Q4s			0
+
+Q5p			0
+
+Q5s			0
+
+Q6.1p		0
+
+Q6.1s		0
+
+Q6.2p		0
+
+Q6.2s		0
+
+Q7.1p		0
+
+Q7.1s		0
+
+Q7.2p		0
+
+Q7.2s		0
+
+linux p		4
+
+linux s		4
+
+alti p		0
+
+alti s		0
+
+notes		one day late
+
+total		19.125
+
+p stands for pair, s for stripe. linux p stands for run and compile pair in linux. 
+
+If you have any question regarding to A1, plz come to DC3305 3~5pm on Friday (29th).
