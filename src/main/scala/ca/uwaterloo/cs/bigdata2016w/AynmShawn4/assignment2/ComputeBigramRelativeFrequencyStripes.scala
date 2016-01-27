@@ -14,7 +14,7 @@ class myPartitioner2(partitionsNum: Int) extends Partitioner {
     val k = key.asInstanceOf[String]
         // `k` is assumed to go continuously from 0 to elements-1.
 
-    return ( (k.split(", ").head.hashCode() & Integer.MAX_VALUE ) % numPartitions).toInt
+    return ( (k.hashCode() & Integer.MAX_VALUE ) % numPartitions).toInt
 
   }
 }
