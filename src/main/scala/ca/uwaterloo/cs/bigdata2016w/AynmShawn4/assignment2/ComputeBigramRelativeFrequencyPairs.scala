@@ -5,6 +5,19 @@ import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
+import org.apache.spark.Partitioner
+
+class myPartitioner(partitionsNum: Int) extends Partitioner {
+ override def numPartitions: Int = partitionsNum
+ override def getPartition(key: Any): Int = {
+    val k = key.asInstanceOf[String]
+        // `k` is assumed to go continuously from 0 to elements-1.
+
+    return ( (k.split(", ").head.hashCode() & Integer.MAX_VALUE ) % numPartitions).toInt
+
+  }
+}
+
 
 class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   mainOptions = Seq(input, output, reducers)
@@ -13,7 +26,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Tokenizer {
   val reducers = opt[Int](descr = "number of reducers", required = false, default = Some(1))
 }
 
-object BigramCount extends Tokenizer {
+object ComputeBigramRelativeFrequencyPairs extends Tokenizer {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
@@ -26,17 +39,39 @@ object BigramCount extends Tokenizer {
     val conf = new SparkConf().setAppName("Bigram Count")
     val sc = new SparkContext(conf)
 
+
     val outputDir = new Path(args.output())
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
     val counts = textFile
+
       .flatMap(line => {
         val tokens = tokenize(line)
-        if (tokens.length > 1) tokens.sliding(2).map(p => p.mkString(" ")).toList else List()
-      })
+        val tk = tokenize(line)
+        List( 
+        (if (tokens.length > 1) tokens.sliding(2).map(p => p.mkString(", ")) else List()),
+        (if (tk.length > 1)  tk.map(p => p + ", *" ).toList.dropRight(1) else List()   )
+        ).flatten
+      }) 
       .map(bigram => (bigram, 1))
       .reduceByKey(_ + _)
-    counts.saveAsTextFile(args.output())
+      .sortByKey()
+
+      .partitionBy(new myPartitioner(args.reducers() ))
+
+      .mapPartitions(pp => { var marginal = 0.0f
+          pp.map(p => {
+
+        if (p._1.split(", ")(1) == "*"){
+          marginal = p._2.toFloat
+          ("(" + p._1 +")", p._2 )
+        } else {
+          ("(" + p._1 +")", p._2 / marginal)
+        }
+        }
+        )
+        })
+      counts.saveAsTextFile(args.output())
   }
 }
