@@ -26,7 +26,7 @@ import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
-public class BooleanRetrieval extends Configured implements Tool {
+public class BooleanRetrievalCompressed extends Configured implements Tool {
   private MapFile.Reader index;
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
