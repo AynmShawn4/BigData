@@ -1,4 +1,4 @@
-package io.bespin.java.mapreduce.search;
+package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment3;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
 
-public class BuildInvertedIndex extends Configured implements Tool {
+public class BuildInvertedIndexCompressed extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
 
   private static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
