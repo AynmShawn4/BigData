@@ -2,24 +2,25 @@ package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment3;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.EOFException;
 import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
-import java.util.Vector;
-import java.io.ByteArrayInputStream;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.DataInputStream;
-import org.apache.hadoop.io.WritableUtils;
-import java.io.File;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.util.Arrays;
+import java.util.Vector;
 
-
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
@@ -32,8 +33,15 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 
 import tl.lin.data.array.ArrayListWritable;
+import tl.lin.data.fd.Object2IntFrequencyDistribution;
+import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
 import tl.lin.data.pair.PairOfInts;
+import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
+import tl.lin.data.pair.PairOfStringInt;
+import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.WritableUtils;
 
 public class BooleanRetrievalCompressed extends Configured implements Tool {
   private Vector <MapFile.Reader> index = new Vector <MapFile.Reader>();
@@ -44,13 +52,11 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
   private BooleanRetrievalCompressed() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-    int reducer = new File(indexPath).listFiles(new FileFilter() {
-    @Override
-    public boolean accept(File file) {
-        return file.isDirectory();
-    }
-    }).length;
-    red = reducer ;
+
+
+    Path path = new Path( indexPath );
+    ContentSummary cs = fs.getContentSummary(path);
+    red = (int)cs.getDirectoryCount() - 1;
 
     for (int i =0; i < red; i++){
       MapFile.Reader aaa = new MapFile.Reader(new Path(indexPath + "/part-r-0000" + i), fs.getConf());
@@ -134,6 +140,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     int previous = 0;
 
     BytesWritable bytesData = new BytesWritable();
+
     int partition = (term.toString().hashCode() & Integer.MAX_VALUE) % red;
     index.elementAt(partition).get(key, bytesData);
 
