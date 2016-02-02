@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import org.apache.hadoop.io.WritableUtils;
 import java.io.File;
+import java.io.*;
 
 
 import org.apache.hadoop.io.BytesWritable;
@@ -43,8 +44,13 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
   private BooleanRetrievalCompressed() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-    int reducer = new File(indexPath).listFiles().length;
-    red = reducer - 2;
+    int reducer = new File(indexPath).listFiles(new FileFilter() {
+    @Override
+    public boolean accept(File file) {
+        return file.isDirectory();
+    }
+    }).length;
+    red = reducer ;
 
     for (int i =0; i < red; i++){
       MapFile.Reader aaa = new MapFile.Reader(new Path(indexPath + "/part-r-0000" + i), fs.getConf());
