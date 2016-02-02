@@ -6,7 +6,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.VIntWritable;
 
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -16,6 +21,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
@@ -33,12 +39,18 @@ import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
 import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
+import tl.lin.data.pair.PairOfStringInt;
+import tl.lin.data.pair.PairOfLongInt;
+
 
 public class BuildInvertedIndexCompressed extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
+  private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
 
-  private static class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
+  private static class MyMapper extends Mapper<LongWritable, Text, PairOfStringInt, VIntWritable> {
     private static final Text WORD = new Text();
+    private static final VIntWritable VINT = new VIntWritable();
+    private static final PairOfStringInt PSL = new PairOfStringInt();
+
     private static final Object2IntFrequencyDistribution<String> COUNTS =
         new Object2IntFrequencyDistributionEntry<String>();
 
@@ -64,38 +76,112 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
       // Emit postings.
       for (PairOfObjectInt<String> e : COUNTS) {
-        WORD.set(e.getLeftElement());
-        context.write(WORD, new PairOfInts((int) docno.get(), e.getRightElement()));
+        VINT.set(e.getRightElement() );
+        PSL.set(e.getLeftElement(), (int)docno.get());
+        context.write(PSL, VINT );
       }
     }
   }
 
   private static class MyReducer extends
-      Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
-    private final static IntWritable DF = new IntWritable();
+      Reducer<PairOfStringInt, VIntWritable, Text, BytesWritable > {
+
+        //initialize 
+
+        private static Text PREVIOUSTERM ; 
+        private static ArrayListWritable<PairOfInts> POSTING ;
+        private static IntWritable previousDocnum;
+        private static BytesWritable bwritable ;
+        private static ByteArrayOutputStream bytearray ;
+        private static DataOutputStream data ;
 
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
-        throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
-      ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
+    public void setup(Context context)
+      throws IOException, InterruptedException {
+        POSTING = new ArrayListWritable<PairOfInts>();
+        previousDocnum = new IntWritable();
+        previousDocnum.set(0);
+        PREVIOUSTERM = new Text(""); 
+        bwritable = new BytesWritable();
+        bytearray = new ByteArrayOutputStream();
+        data = new DataOutputStream(bytearray);
 
+    }
+
+    @Override
+    public void reduce(PairOfStringInt key, Iterable<VIntWritable> values, Context context)
+        throws IOException, InterruptedException {
+
+      String term = key.getLeftElement();
+
+
+      if ((!term.equals(PREVIOUSTERM.toString())) && (PREVIOUSTERM.getLength() != 0 )){
+
+        for (PairOfInts pair : POSTING){
+          WritableUtils.writeVInt(data, pair.getLeftElement() ); //left doc num
+          WritableUtils.writeVInt(data, pair.getRightElement()); //right term frequency
+        }
+
+        bwritable.set(bytearray.toByteArray(), 0, bytearray.size());
+
+        context.write(PREVIOUSTERM, bwritable);
+
+        POSTING.clear();
+        bwritable.setSize(0);
+        bytearray.reset();
+        data.flush();
+        previousDocnum.set(0);
+      }
+      
+      Iterator<VIntWritable> iter = values.iterator();
+      //reduce   append
       int df = 0;
       while (iter.hasNext()) {
-        postings.add(iter.next().clone());
-        df++;
+        df = df + iter.next().get();
       }
+      POSTING.add(new PairOfInts(key.getRightElement() - (int)previousDocnum.get() , df));
 
-      // Sort the postings by docno ascending.
-      Collections.sort(postings);
+      PREVIOUSTERM.set(key.getLeftElement());
+      previousDocnum.set(key.getRightElement());
 
-      DF.set(df);
-      context.write(key,
-          new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF, postings));
+     // DF.set(df);
+   //   context.write(key,
+   //       new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF, postings));
+    }
+
+    @Override
+    public void cleanup(Context context) throws IOException, InterruptedException{
+
+        for (PairOfInts pair : POSTING){
+          WritableUtils.writeVInt(data, pair.getLeftElement()  ); //left doc num
+          WritableUtils.writeVInt(data, pair.getRightElement()); //right term frequency
+
+        }
+
+        bwritable.set(bytearray.toByteArray(), 0, bytearray.size());
+        int aa = (int)previousDocnum.get();
+        if (aa != 0 ){
+          context.write(PREVIOUSTERM, bwritable);
+        }
+
+        POSTING.clear();
+        bytearray.reset();
+        data.flush();
+        bwritable.setSize(0);
+        PREVIOUSTERM.set("");
+
     }
   }
 
-  private BuildInvertedIndex() {}
+  protected static class MyPartitioner extends Partitioner<PairOfStringInt, VIntWritable> {
+    @Override
+    public int getPartition(PairOfStringInt key, VIntWritable value, int numReduceTasks) {
+      return (key.getLeftElement().toString().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
+    }
+  }
+
+
+  private BuildInvertedIndexCompressed() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
@@ -103,6 +189,9 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
     public String output;
+
+    @Option(name = "-reducers", metaVar = "[num]", required = false, usage = "number of reducers")
+    public int numReducers = 1;
   }
 
   /**
@@ -120,27 +209,30 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool: " + BuildInvertedIndex.class.getSimpleName());
+    LOG.info("Tool: " + BuildInvertedIndexCompressed.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
+    LOG.info(" - num reducers: " + args.numReducers);
+
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(BuildInvertedIndex.class.getSimpleName());
-    job.setJarByClass(BuildInvertedIndex.class);
+    job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
+    job.setJarByClass(BuildInvertedIndexCompressed.class);
 
-    job.setNumReduceTasks(1);
+    job.setNumReduceTasks(args.numReducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
     FileOutputFormat.setOutputPath(job, new Path(args.output));
 
-    job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfInts.class);
+    job.setMapOutputKeyClass(PairOfStringInt.class);
+    job.setMapOutputValueClass(VIntWritable.class);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(PairOfWritables.class);
+    job.setOutputValueClass(BytesWritable.class);
     job.setOutputFormatClass(MapFileOutputFormat.class);
 
     job.setMapperClass(MyMapper.class);
     job.setReducerClass(MyReducer.class);
+    job.setPartitionerClass(MyPartitioner.class);
 
     // Delete the output directory if it exists already.
     Path outputDir = new Path(args.output);
@@ -157,6 +249,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BuildInvertedIndex(), args);
+    ToolRunner.run(new BuildInvertedIndexCompressed(), args);
   }
 }

@@ -6,7 +6,15 @@ import java.io.InputStreamReader;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
+import java.util.Vector;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import org.apache.hadoop.io.WritableUtils;
+import java.io.File;
 
+
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -27,14 +35,21 @@ import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
 public class BooleanRetrievalCompressed extends Configured implements Tool {
-  private MapFile.Reader index;
+  private Vector <MapFile.Reader> index = new Vector <MapFile.Reader>();
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
+  private int red  = 0;
 
-  private BooleanRetrieval() {}
+  private BooleanRetrievalCompressed() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-    index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
+    int reducer = new File(indexPath).listFiles().length;
+    red = reducer - 2;
+
+    for (int i =0; i < red; i++){
+      MapFile.Reader aaa = new MapFile.Reader(new Path(indexPath + "/part-r-0000" + i), fs.getConf());
+      index.add(aaa);
+    }
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<Set<Integer>>();
   }
@@ -108,13 +123,39 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
-    PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
 
     key.set(term);
-    index.get(key, value);
+    int previous = 0;
 
-    return value.getRightElement();
+    BytesWritable bytesData = new BytesWritable();
+    int partition = (term.toString().hashCode() & Integer.MAX_VALUE) % red;
+    index.elementAt(partition).get(key, bytesData);
+
+    ArrayListWritable<PairOfInts> posting = new ArrayListWritable<PairOfInts>();
+
+    byte[] bytes = bytesData.getBytes();
+    DataInputStream data = new DataInputStream(new ByteArrayInputStream(bytes));
+
+    int docno = 0;
+    int tf = 0;
+    int eof = 1; 
+    while ( eof == 1 ){
+      docno = WritableUtils.readVInt(data) ;
+      docno += previous;
+      tf = WritableUtils.readVInt(data);
+
+      if ((docno == previous) || (tf == 0)){
+        eof = 0;
+      } else {
+        previous = docno;
+
+        posting.add(new PairOfInts(docno, tf) );
+
+      }
+
+    }
+
+    return posting;
   }
 
   public String fetchLine(long offset) throws IOException {
@@ -122,6 +163,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     BufferedReader reader = new BufferedReader(new InputStreamReader(collection));
 
     String d = reader.readLine();
+
     return d.length() > 80 ? d.substring(0, 80) + "..." : d;
   }
 
@@ -172,6 +214,6 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BooleanRetrieval(), args);
+    ToolRunner.run(new BooleanRetrievalCompressed(), args);
   }
 }
