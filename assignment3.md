@@ -11,11 +11,8 @@
 
 </li>
 
-<li>Running on Linux lab machine. <br>
-    ParisPMI: 52.197 sec.<br>
-    SripesPMI: 21.067 seconds.
-</li>
-
+<li>The size of your compressed index for the sample Wikipedia collection is 430.8M.
+<br>430.8 M  cs489-2016w-AynmShawn4-a3-index-wiki
 <li>Running on Linux lab machine. <br>
     ParisPMI:  63.171 seconds <br>
     SripesPMI: 22.159 seconds.</li>
