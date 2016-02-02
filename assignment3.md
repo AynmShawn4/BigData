@@ -17,7 +17,6 @@
     ParisPMI:  63.171 seconds <br>
     SripesPMI: 22.159 seconds.</li>
 
-<li>984045 distinct pairs.</li>
 
 
 
