@@ -13,9 +13,13 @@
 
 <li>The size of your compressed index for the sample Wikipedia collection is 430.8M.
 <br>430.8 M  cs489-2016w-AynmShawn4-a3-index-wiki
-<li>Running on Linux lab machine. <br>
-    ParisPMI:  63.171 seconds <br>
-    SripesPMI: 22.159 seconds.</li>
+<li>Query: waterloo stanford OR cheriton AND
+<br>8468033	Eurostar	Eurostar is a high-speed railway service connecting London with Paris a...
+<br>88418750	Railway platform	A railway platform is a section of pathway, alongside rail trac...
+<br>137384453	Andy Bechtolsheim	Andreas "Andy" von Bechtolsheim (born September 30, 1955) is a...
+<br>299601817	List of civil parishes in Hampshire	This is a list of civil parishes in the cere...
+<br>603734578	Institute for Quantum Computing	The Institute for Quantum Computing, or IQC, loc...
+<br>986247632	List of University of Wisconsin–Madison people in academics	List of University o....</li>
 
 
 
