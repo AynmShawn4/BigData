@@ -6,7 +6,7 @@
 <br>640K	cs489-2016w-AynmShawn4-a3-index-shakespeare/part-r-00003
 <br>648K	cs489-2016w-AynmShawn4-a3-index-shakespeare/part-r-00004
 <br>3.8M	cs489-2016w-AynmShawn4-a3-index-shakespeare
-The compressed version is about 3.8M
+<br>The compressed version is about 3.8M
     
 
 </li>
