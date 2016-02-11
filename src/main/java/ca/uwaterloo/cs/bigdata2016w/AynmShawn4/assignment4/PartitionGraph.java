@@ -1,4 +1,4 @@
-package io.bespin.java.mapreduce.pagerank;
+package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment4;
 
 import java.util.Arrays;
 
@@ -118,9 +118,9 @@ public class PartitionGraph extends Configured implements Tool {
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(PageRankNode.class);
 
-    if (useRange) {
+   // if (useRange) {
       job.setPartitionerClass(RangePartitioner.class);
-    }
+   // }
 
     FileSystem.get(conf).delete(new Path(outPath), true);
 

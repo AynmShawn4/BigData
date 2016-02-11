@@ -1,4 +1,4 @@
-package io.bespin.java.mapreduce.pagerank;
+package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment4;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

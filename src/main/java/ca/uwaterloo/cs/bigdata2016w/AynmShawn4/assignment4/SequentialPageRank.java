@@ -15,17 +15,16 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.collections15.Transformer;
 import org.apache.hadoop.util.ToolRunner;
 
 import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
 import edu.uci.ics.jung.algorithms.importance.Ranking;
-import edu.uci.ics.jung.algorithms.scoring.PageRankWithPriors;
+import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 
 /**
  * <p>
- * Program that computes personalized PageRank for a graph using the <a
+ * Program that computes PageRank for a graph using the <a
  * href="http://jung.sourceforge.net/">JUNG</a> package (2.0 alpha1). Program takes two command-line
  * arguments: the first is a file containing the graph data, and the second is the random jump
  * factor (a typical setting is 0.15).
@@ -41,12 +40,11 @@ import edu.uci.ics.jung.graph.DirectedSparseGraph;
  *
  * @author Jimmy Lin
  */
-public class SequentialPersonalizedPageRank {
-  private SequentialPersonalizedPageRank() {}
+public class SequentialPageRank {
+  private SequentialPageRank() {}
 
   private static final String INPUT = "input";
   private static final String JUMP = "jump";
-  private static final String SOURCE = "source";
 
   @SuppressWarnings({ "static-access" })
   public static void main(String[] args) throws IOException {
@@ -56,8 +54,6 @@ public class SequentialPersonalizedPageRank {
         .withDescription("input path").create(INPUT));
     options.addOption(OptionBuilder.withArgName("val").hasArg()
         .withDescription("random jump factor").create(JUMP));
-    options.addOption(OptionBuilder.withArgName("node").hasArg()
-        .withDescription("source node (i.e., destination of the random jump)").create(SOURCE));
 
     CommandLine cmdline = null;
     CommandLineParser parser = new GnuParser();
@@ -69,17 +65,16 @@ public class SequentialPersonalizedPageRank {
       System.exit(-1);
     }
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(SOURCE)) {
+    if (!cmdline.hasOption(INPUT)) {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
       formatter.setWidth(120);
-      formatter.printHelp(SequentialPersonalizedPageRank.class.getName(), options);
+      formatter.printHelp(SequentialPageRank.class.getName(), options);
       ToolRunner.printGenericCommandUsage(System.out);
       System.exit(-1);
     }
 
     String infile = cmdline.getOptionValue(INPUT);
-    final String source = cmdline.getOptionValue(SOURCE);
     float alpha = cmdline.hasOption(JUMP) ? Float.parseFloat(cmdline.getOptionValue(JUMP)) : 0.15f;
 
     int edgeCnt = 0;
@@ -99,11 +94,6 @@ public class SequentialPersonalizedPageRank {
 
     data.close();
 
-    if (!graph.containsVertex(source)) {
-      System.err.println("Error: source node not found in the graph!");
-      System.exit(-1);
-    }
-
     WeakComponentClusterer<String, Integer> clusterer = new WeakComponentClusterer<String, Integer>();
 
     Set<Set<String>> components = clusterer.transform(graph);
@@ -113,15 +103,8 @@ public class SequentialPersonalizedPageRank {
     System.out.println("Number of nodes: " + graph.getVertexCount());
     System.out.println("Random jump factor: " + alpha);
 
-    // Compute personalized PageRank.
-    PageRankWithPriors<String, Integer> ranker = new PageRankWithPriors<String, Integer>(graph,
-        new Transformer<String, Double>() {
-          @Override
-          public Double transform(String vertex) {
-            return vertex.equals(source) ? 1.0 : 0;
-          }
-        }, alpha);
-
+    // Compute PageRank.
+    PageRank<String, Integer> ranker = new PageRank<String, Integer>(graph, alpha);
     ranker.evaluate();
 
     // Use priority queue to sort vertices by PageRank values.
@@ -135,7 +118,7 @@ public class SequentialPersonalizedPageRank {
     System.out.println("\nPageRank of nodes, in descending order:");
     Ranking<String> r = null;
     while ((r = q.poll()) != null) {
-      System.out.println(String.format("%.5f %s", r.rankScore, r.getRanked()));
+      System.out.println(String.format("%.5f %s", Math.log(r.rankScore), r.getRanked()));
     }
   }
 }

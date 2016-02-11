@@ -26,6 +26,8 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
 
 import tl.lin.data.array.ArrayListOfIntsWritable;
 
@@ -38,23 +40,32 @@ import tl.lin.data.array.ArrayListOfIntsWritable;
  * @author Jimmy Lin
  * @author Michael Schatz
  */
-public class BuildPageRankRecords extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(BuildPageRankRecords.class);
+public class BuildPersonalizedPageRankRecords extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(BuildPersonalizedPageRankRecords.class);
 
   private static final String NODE_CNT_FIELD = "node.cnt";
 
   private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
     private static final IntWritable nid = new IntWritable();
     private static final PageRankNode node = new PageRankNode();
+    private static String[] sourceList;
 
     @Override
     public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
       int n = context.getConfiguration().getInt(NODE_CNT_FIELD, 0);
+      String sources = context.getConfiguration().get("SOURCE_FIELD");
+
+      sourceList = sources.split(",");
+
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
       node.setType(PageRankNode.Type.Complete);
-      node.setPageRank((float) -StrictMath.log(n));
+   //   System.out.println("in setup and n is " + n);
+   //   System.out.println("in setup and sources are " + sources);
+
+      node.setPageRank((float)Math.log(0));
+     // node.setPageRank((float) -StrictMath.log(n));
     }
 
     @Override
@@ -63,6 +74,19 @@ public class BuildPageRankRecords extends Configured implements Tool {
       String[] arr = t.toString().trim().split("\\s+");
 
       nid.set(Integer.parseInt(arr[0]));
+      int temp = nid.get();
+      //only 1 
+      for (int i = 0; i < 1; i++){
+        if (Integer.toString(Integer.parseInt(arr[0])).equals(sourceList[0]) ){
+          node.setPageRank((float)Math.log(1.0f));
+          LOG.info("DEBUGGING: Set " + temp + " to pagerank 1" );
+
+          break;
+        } else {
+          node.setPageRank((float)Math.log(0));
+
+        }
+      }
       if (arr.length == 1) {
         node.setNodeId(Integer.parseInt(arr[0]));
         node.setAdjacencyList(new ArrayListOfIntsWritable());
@@ -89,11 +113,12 @@ public class BuildPageRankRecords extends Configured implements Tool {
     }
   }
 
-  public BuildPageRankRecords() {}
+  public BuildPersonalizedPageRankRecords() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String NUM_NODES = "numNodes";
+  private static final String SOURCE = "sources";
 
   /**
    * Runs this tool.
@@ -108,6 +133,8 @@ public class BuildPageRankRecords extends Configured implements Tool {
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("number of nodes").create(NUM_NODES));
+    options.addOption(OptionBuilder.withArgName("src").hasArg()
+        .withDescription("array of source").create(SOURCE));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -131,19 +158,24 @@ public class BuildPageRankRecords extends Configured implements Tool {
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
+    String sourceArray = cmdline.getOptionValue(SOURCE);
 
-    LOG.info("Tool name: " + BuildPageRankRecords.class.getSimpleName());
+    LOG.info("Tool name: " + BuildPersonalizedPageRankRecords.class.getSimpleName());
     LOG.info(" - inputDir: " + inputPath);
     LOG.info(" - outputDir: " + outputPath);
     LOG.info(" - numNodes: " + n);
+    LOG.info(" - source: " + sourceArray);
+    
+
 
     Configuration conf = getConf();
     conf.setInt(NODE_CNT_FIELD, n);
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
+    conf.set("SOURCE_FIELD", sourceArray);
 
     Job job = Job.getInstance(conf);
-    job.setJobName(BuildPageRankRecords.class.getSimpleName() + ":" + inputPath);
-    job.setJarByClass(BuildPageRankRecords.class);
+    job.setJobName(BuildPersonalizedPageRankRecords.class.getSimpleName() + ":" + inputPath);
+    job.setJarByClass(BuildPersonalizedPageRankRecords.class);
 
     job.setNumReduceTasks(0);
 
@@ -152,6 +184,7 @@ public class BuildPageRankRecords extends Configured implements Tool {
 
     job.setInputFormatClass(TextInputFormat.class);
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
+    //job.setOutputFormatClass(TextOutputFormat.class);
 
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(PageRankNode.class);
@@ -173,6 +206,6 @@ public class BuildPageRankRecords extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BuildPageRankRecords(), args);
+    ToolRunner.run(new BuildPersonalizedPageRankRecords(), args);
   }
 }
