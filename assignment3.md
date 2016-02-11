@@ -28,3 +28,24 @@ Query: internet startup AND canada AND ontario AND
 <br>718311526	Criticism of Facebook	Facebook has made changes throughout its lifespan from use...</li>
 
 </ol>
+
+
+Marks
+
+Q1 5 
+Q2a 5
+Q2b 5
+Q3 5
+ 
+Q4 5
+Q5a 5
+Q5b 5
+Q6 5
+
+AC 5
+LC 5
+
+Total 50
+
+Comments
+- Index is slightly smaller than Jimmy's
