@@ -79,7 +79,6 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       for (int i = 0; i < 1; i++){
         if (Integer.toString(Integer.parseInt(arr[0])).equals(sourceList[0]) ){
           node.setPageRank((float)Math.log(1.0f));
-          LOG.info("DEBUGGING: Set " + temp + " to pagerank 1" );
 
           break;
         } else {

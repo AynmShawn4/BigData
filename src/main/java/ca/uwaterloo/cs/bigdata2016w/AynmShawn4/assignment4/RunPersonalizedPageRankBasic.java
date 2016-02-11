@@ -259,7 +259,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
       //only 1 
       if (Integer.toString(temp).equals(ssource[0]) ){
-        System.out.println("missing mass is " + missingMass);
 
         float p = node.getPageRank();
         float jump = (float) (Math.log(ALPHA) );
@@ -400,10 +399,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
     // Find out how much PageRank mass got lost at the dangling nodes.
     float missing = 1.0f - (float) StrictMath.exp(mass);
-
-    System.out.println("mass is " + mass);
-    System.out.println("missing mass is " +  missing);
-
 
     // Job 2: distribute missing mass, take care of random jump factor.
     phase2(i, j, missing, basePath, numNodes);
