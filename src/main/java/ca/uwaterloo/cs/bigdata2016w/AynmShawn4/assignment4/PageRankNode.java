@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.hadoop.io.Writable;
 
@@ -35,17 +36,27 @@ public class PageRankNode implements Writable {
 
   private Type type;
   private int nodeid;
-  private float pagerank;
+  private float[] pagerank;
+  private int size;
   private ArrayListOfIntsWritable adjacenyList;
 
   public PageRankNode() {}
 
-  public float getPageRank() {
-    return pagerank;
+  public void setPageRankSize(int n){
+    this.pagerank = new float[n];
+    this.size = n;
   }
 
-  public void setPageRank(float p) {
-    this.pagerank = p;
+  public int getSize(){
+    return this.size;
+  }
+
+  public float getPageRank(int posi) {
+    return pagerank[posi];
+  }
+
+  public void setPageRank(float p, int posi) {
+    this.pagerank[posi] = p;
   }
 
   public int getNodeId() {
@@ -82,14 +93,19 @@ public class PageRankNode implements Writable {
     int b = in.readByte();
     type = mapping[b];
     nodeid = in.readInt();
-
+    int l = in.readInt();
+    setPageRankSize(l);
     if (type.equals(Type.Mass)) {
-      pagerank = in.readFloat();
+      for (int i = 0; i < pagerank.length; i++){
+        pagerank[i] = in.readFloat();
+      }
       return;
     }
 
     if (type.equals(Type.Complete)) {
-      pagerank = in.readFloat();
+      for (int i = 0; i < pagerank.length; i++){
+        pagerank[i] = in.readFloat();
+      }
     }
 
     adjacenyList = new ArrayListOfIntsWritable();
@@ -105,14 +121,19 @@ public class PageRankNode implements Writable {
   public void write(DataOutput out) throws IOException {
     out.writeByte(type.val);
     out.writeInt(nodeid);
+    out.writeInt(size);
 
     if (type.equals(Type.Mass)) {
-      out.writeFloat(pagerank);
+      for (int i = 0; i < pagerank.length; i++){
+        out.writeFloat(pagerank[i]);
+      }
       return;
     }
 
     if (type.equals(Type.Complete)) {
-      out.writeFloat(pagerank);
+      for (int i = 0; i < pagerank.length; i++){
+        out.writeFloat(pagerank[i]);
+      }
     }
 
     adjacenyList.write(out);
@@ -120,7 +141,9 @@ public class PageRankNode implements Writable {
 
   @Override
   public String toString() {
-    return String.format("{%d %.4f %s}", nodeid, pagerank, (adjacenyList == null ? "[]"
+    String temp = Arrays.toString(pagerank);
+
+    return String.format("{%d %s %s}", nodeid, temp, (adjacenyList == null ? "[]"
         : adjacenyList.toString(10)));
   }
 

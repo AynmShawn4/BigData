@@ -49,6 +49,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     private static final IntWritable nid = new IntWritable();
     private static final PageRankNode node = new PageRankNode();
     private static String[] sourceList;
+    private static int numSource;
 
     @Override
     public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
@@ -56,15 +57,21 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       String sources = context.getConfiguration().get("SOURCE_FIELD");
 
       sourceList = sources.split(",");
+      numSource = sourceList.length;
 
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
       node.setType(PageRankNode.Type.Complete);
+
+      node.setPageRankSize(numSource);
+      for (int i =0; i < numSource; i++){
+          node.setPageRank((float)Math.log(0), i);
+      }
    //   System.out.println("in setup and n is " + n);
    //   System.out.println("in setup and sources are " + sources);
 
-      node.setPageRank((float)Math.log(0));
+     // node.setPageRank((float)Math.log(0));
      // node.setPageRank((float) -StrictMath.log(n));
     }
 
@@ -76,16 +83,15 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       nid.set(Integer.parseInt(arr[0]));
       int temp = nid.get();
       //only 1 
-      for (int i = 0; i < 1; i++){
-        if (Integer.toString(Integer.parseInt(arr[0])).equals(sourceList[0]) ){
-          node.setPageRank((float)Math.log(1.0f));
-
+      int reset = 0;
+      for (int i = 0; i < sourceList.length; i++){
+        if (Integer.toString(Integer.parseInt(arr[0])).equals(sourceList[i]) ){
+          node.setPageRank((float)Math.log(1.0f), i);
+          reset = i;
           break;
-        } else {
-          node.setPageRank((float)Math.log(0));
-
         }
       }
+
       if (arr.length == 1) {
         node.setNodeId(Integer.parseInt(arr[0]));
         node.setAdjacencyList(new ArrayListOfIntsWritable());
@@ -109,6 +115,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       }
 
       context.write(nid, node);
+      node.setPageRank((float)Math.log(0), reset);
     }
   }
 
