@@ -480,6 +480,9 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     float[] missing = new float[numSource];
     for (int k =0; k < numSource; k++){
       missing[k] = 1.0f - (float) StrictMath.exp(mass[k]);
+      if (missing[k] < 0.0f){
+        missing[k] = 0.0f;
+      }
     }
 
     // Job 2: distribute missing mass, take care of random jump factor.
