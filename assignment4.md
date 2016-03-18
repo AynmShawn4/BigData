@@ -31,8 +31,8 @@ Source:	73276 <br>
 | 15 | 20 | 10 | 10 |
 
 
-* Penalty: 50%
-* Total: 27.5/55
+* Penalty: 25%
+* Total: 41.25/55
 
 
 * SL (15 points)
