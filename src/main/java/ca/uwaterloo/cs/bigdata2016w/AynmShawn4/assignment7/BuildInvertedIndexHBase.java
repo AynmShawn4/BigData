@@ -44,7 +44,7 @@ import tl.lin.data.pair.PairOfLongInt;
 
 
 public class BuildInvertedIndexHBase extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
+  private static final Logger LOG = Logger.getLogger(BuildInvertedIndexHBase.class);
 
   private static class MyMapper extends Mapper<LongWritable, Text, PairOfStringInt, VIntWritable> {
     private static final Text WORD = new Text();
@@ -209,15 +209,15 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool: " + BuildInvertedIndexCompressed.class.getSimpleName());
+    LOG.info("Tool: " + BuildInvertedIndexHBase.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
 
 
     Job job = Job.getInstance(getConf());
-    job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
-    job.setJarByClass(BuildInvertedIndexCompressed.class);
+    job.setJobName(BuildInvertedIndexHBase.class.getSimpleName());
+    job.setJarByClass(BuildInvertedIndexHBase.class);
 
     job.setNumReduceTasks(args.numReducers);
 
@@ -249,6 +249,6 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BuildInvertedIndexCompressed(), args);
+    ToolRunner.run(new BuildInvertedIndexHBase(), args);
   }
 }
