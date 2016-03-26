@@ -227,6 +227,6 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BooleanRetrievalCompressed(), args);
+    ToolRunner.run(new BooleanRetrievalHBase(), args);
   }
 }
