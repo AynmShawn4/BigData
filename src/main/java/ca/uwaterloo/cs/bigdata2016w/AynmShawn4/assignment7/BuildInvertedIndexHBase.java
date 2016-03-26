@@ -43,7 +43,7 @@ import tl.lin.data.pair.PairOfStringInt;
 import tl.lin.data.pair.PairOfLongInt;
 
 
-public class BuildInvertedIndexCompressed extends Configured implements Tool {
+public class BuildInvertedIndexHBase extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
 
   private static class MyMapper extends Mapper<LongWritable, Text, PairOfStringInt, VIntWritable> {
@@ -181,7 +181,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   }
 
 
-  private BuildInvertedIndexCompressed() {}
+  private BuildInvertedIndexHBase() {}
 
   public static class Args {
     @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
