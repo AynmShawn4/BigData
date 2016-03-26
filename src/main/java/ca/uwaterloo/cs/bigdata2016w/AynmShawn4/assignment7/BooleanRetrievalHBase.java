@@ -43,13 +43,13 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.WritableUtils;
 
-public class BooleanRetrievalCompressed extends Configured implements Tool {
+public class BooleanRetrievalHBase extends Configured implements Tool {
   private Vector <MapFile.Reader> index = new Vector <MapFile.Reader>();
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
   private int red  = 0;
 
-  private BooleanRetrievalCompressed() {}
+  private BooleanRetrievalHBase() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
 
