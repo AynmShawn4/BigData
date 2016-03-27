@@ -182,7 +182,7 @@ public class BuildInvertedIndexHBase extends Configured implements Tool {
       return -1;
     }
 
-    LOG.info("Tool: " + HBaseWordCount.class.getSimpleName());
+    LOG.info("Tool: " + BuildInvertedIndexHBase.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output table: " + args.table);
     LOG.info(" - config: " + args.config);
