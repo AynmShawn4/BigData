@@ -6,31 +6,10 @@ import java.io.EOFException;
 import java.io.InputStreamReader;
 import java.io.*;
 import java.util.Set;
+import java.util.Map;
 import java.util.Stack;
 import java.util.TreeSet;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.DataInputStream;
-import java.io.ByteArrayInputStream;
-import java.util.Arrays;
-import java.util.Vector;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.*;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.MapFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.ParserProperties;
+import java.util.NavigableMap;
 
 import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.fd.Object2IntFrequencyDistribution;
@@ -43,25 +22,50 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.WritableUtils;
 
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapFile;
+import org.apache.hadoop.io.Text;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HConnection;
+import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j.Logger;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
+
 public class BooleanRetrievalHBase extends Configured implements Tool {
-  private Vector <MapFile.Reader> index = new Vector <MapFile.Reader>();
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
-  private int red  = 0;
+  private HTableInterface table; 
 
   private BooleanRetrievalHBase() {}
 
-  private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
+  private void initialize(String tablePath, String collectionPath, String config) throws IOException {
 
+    FileSystem fs = FileSystem.get(new Configuration());
 
-    Path path = new Path( indexPath );
-    ContentSummary cs = fs.getContentSummary(path);
-    red = (int)cs.getDirectoryCount() - 1;
+    Configuration conf = getConf();
+    conf.addResource(new Path(config));
 
-    for (int i =0; i < red; i++){
-      MapFile.Reader aaa = new MapFile.Reader(new Path(indexPath + "/part-r-0000" + i), fs.getConf());
-      index.add(aaa);
-    }
+    Configuration hbaseConfig = HBaseConfiguration.create(conf);
+    HConnection hbaseConnection = HConnectionManager.createConnection(hbaseConfig);
+    table = hbaseConnection.getTable(tablePath);
+
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<Set<Integer>>();
   }
@@ -134,39 +138,21 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
   }
 
   private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
-    Text key = new Text();
 
-    key.set(term);
-    int previous = 0;
+    Get get = new Get(Bytes.toBytes(term));
+    Result result = table.get(get); //a row that has row key as term
 
-    BytesWritable bytesData = new BytesWritable();
 
-    int partition = (term.toString().hashCode() & Integer.MAX_VALUE) % red;
-    index.elementAt(partition).get(key, bytesData);
-
+    NavigableMap<byte[], byte[]> columnFamily = result.getFamilyMap(Bytes.toBytes("p"));
     ArrayListWritable<PairOfInts> posting = new ArrayListWritable<PairOfInts>();
 
-    byte[] bytes = bytesData.getBytes();
-    DataInputStream data = new DataInputStream(new ByteArrayInputStream(bytes));
 
-    int docno = 0;
-    int tf = 0;
-    int eof = 1; 
-    while ( eof == 1 ){
-      docno = WritableUtils.readVInt(data) ;
-      docno += previous;
-      tf = WritableUtils.readVInt(data);
 
-      if ((docno == previous) || (tf == 0)){
-        eof = 0;
-      } else {
-        previous = docno;
+    for(Map.Entry<byte[], byte[]> entry: columnFamily.entrySet()) {
+        
+        posting.add(new PairOfInts( Bytes.toInt(entry.getKey()), Bytes.toInt(entry.getValue()) ) );
 
-        posting.add(new PairOfInts(docno, tf) );
-
-      }
-
-    }
+    }   
 
     return posting;
   }
@@ -181,8 +167,11 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
   }
 
   public static class Args {
-    @Option(name = "-index", metaVar = "[path]", required = true, usage = "index path")
-    public String index;
+    @Option(name = "-table", metaVar = "[name]", required = true, usage = "HBase table")
+    public String table;
+
+    @Option(name = "-config", metaVar = "[path]", required = true, usage = "HBase config")
+    public String config;
 
     @Option(name = "-collection", metaVar = "[path]", required = true, usage = "collection path")
     public String collection;
@@ -192,8 +181,8 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
   }
 
   /**
-   * Runs this tool.
-   */
+ *    * Runs this tool.
+ *       */
   public int run(String[] argv) throws Exception {
     Args args = new Args();
     CmdLineParser parser = new CmdLineParser(args, ParserProperties.defaults().withUsageWidth(100));
@@ -211,9 +200,7 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
       return -1;
     }
 
-    FileSystem fs = FileSystem.get(new Configuration());
-
-    initialize(args.index, args.collection, fs);
+    initialize(args.table, args.collection, args.config);
 
     System.out.println("Query: " + args.query);
     long startTime = System.currentTimeMillis();
@@ -224,8 +211,8 @@ public class BooleanRetrievalHBase extends Configured implements Tool {
   }
 
   /**
-   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
-   */
+ *    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+ *       */
   public static void main(String[] args) throws Exception {
     ToolRunner.run(new BooleanRetrievalHBase(), args);
   }
