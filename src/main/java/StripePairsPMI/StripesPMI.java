@@ -144,7 +144,6 @@ public class StripesPMI  extends Configured implements Tool {
 
 
                             hMap.put(left, f);
-
                             line = br.readLine();
 
                           }
