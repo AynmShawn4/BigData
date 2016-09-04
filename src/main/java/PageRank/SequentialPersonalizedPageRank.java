@@ -130,7 +130,6 @@ public class SequentialPersonalizedPageRank {
     for (String pmid : graph.getVertices()) {
       q.add(new Ranking<String>(i++, ranker.getVertexScore(pmid), pmid));
     }
-
     // Print PageRank values.
     System.out.println("\nPageRank of nodes, in descending order:");
     Ranking<String> r = null;
