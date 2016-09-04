@@ -1,5 +1,4 @@
 package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment4;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
