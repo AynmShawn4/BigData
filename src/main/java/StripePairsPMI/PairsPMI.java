@@ -78,7 +78,6 @@ public class PairsPMI  extends Configured implements Tool {
       }
 
     }
-      // Your code goes here... 
       
   }
 
