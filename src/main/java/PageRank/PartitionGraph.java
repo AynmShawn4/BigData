@@ -118,9 +118,9 @@ public class PartitionGraph extends Configured implements Tool {
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(PageRankNode.class);
 
-   // if (useRange) {
+
       job.setPartitionerClass(RangePartitioner.class);
-   // }
+ 
 
     FileSystem.get(conf).delete(new Path(outPath), true);
 
