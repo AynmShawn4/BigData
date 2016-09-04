@@ -88,8 +88,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       ssource = conf.get("SOURCE_FIELD").split(",");
       numSource = ssource.length;
       intermediateMass.setPageRankSize(numSource);
-
-
     }
 
     @Override
