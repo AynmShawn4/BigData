@@ -1,5 +1,6 @@
 package ca.uwaterloo.cs.bigdata2016w.AynmShawn4.assignment5
 
+
 import org.apache.log4j._
 import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
