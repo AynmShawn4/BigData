@@ -11,7 +11,7 @@ class Config1(args: Seq[String]) extends ScallopConf(args) {
   val input = opt[String](descr = "input path", required = true)
 }
 
-object Q5  {
+object SelectWhereOrderByGroupByGraphGeneratingscala  {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
