@@ -6,7 +6,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
 
-object Q3  {
+object SelectWhereOrderByQuery2 {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
