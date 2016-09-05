@@ -12,3 +12,5 @@ Completed various assignments and tasks on Spark and Hadoop frameworks
 * Compute bigram relative frequency in pairs and stripes implementation.
 * Data Warehousing - hand craft serveral spark programs that implement SQL queries in Data warehousing scenario.
 * Spam classifier - Building spam classifier trained using stochastic gradient descent in Spark.
+
+<e>Credits to Jimmy Lin</e>
