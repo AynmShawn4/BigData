@@ -8,7 +8,6 @@ import org.rogach.scallop._
 import scala.math._
 import util.Random
 
-
 class Config(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, model, shuffle)
   val input = opt[String](descr = "input path", required = true)
