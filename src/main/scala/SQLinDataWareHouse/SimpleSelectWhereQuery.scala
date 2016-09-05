@@ -13,7 +13,7 @@ class Config(args: Seq[String]) extends ScallopConf(args) {
   val date = opt[String](descr = "date of shipment", required = true)
 }
 
-object Q1  {
+object SimpleSelectWhereQuery  {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
