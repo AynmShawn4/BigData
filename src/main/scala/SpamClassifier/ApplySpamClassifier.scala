@@ -50,6 +50,5 @@ object ApplySpamClassifier  {
     		(docid, hamOrSpam, score, prediction)
     	}
     ).saveAsTextFile(args.output())	
-
   }
 }
